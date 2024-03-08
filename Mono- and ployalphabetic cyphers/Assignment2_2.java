@@ -17,6 +17,7 @@ public class Assignment2_2 {
 
         if (gcd(a, 26) != 1) {
             System.out.println("a and 26 are not coprime");
+            sc.close();
             return;
         }
 
