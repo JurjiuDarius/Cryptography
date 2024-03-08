@@ -32,10 +32,26 @@ public class Assignment2_2 {
         byte[] x = new byte[100];
         cyphertext = cyphertext.toLowerCase();
         x = cyphertext.getBytes();
+        int inverseA = findModuloInverse(a, 26);
         for (int i = 0; i < x.length; i++) {
-            
+            x[i] -= 97;
+            x[i] -= b;
+            if (x[i] < 0) {
+                x[i] += 26;
+            }
+            x[i] = (byte) ((x[i] * inverseA) % 26);
+            x[i] += 97;
         }
         return new String(x);
+    }
+
+    public static int findModuloInverse(int x, int m) {
+        for (int i = 1; i < m; i++) {
+            if ((x * i) % m == 1) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public static int gcd(int a, int b) {
