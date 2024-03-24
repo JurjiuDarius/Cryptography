@@ -14,11 +14,14 @@ public class Assignment1 {
 
     public static String HackShift(String cyphertext){
         cyphertext = cyphertext.toLowerCase();
-        String plaintext = "";
+        
         for (int i = 0; i < 26; i++){
-            plaintext += "Shift " + i + ": " + shift(i, cyphertext) + "\n";
+            String potentialPlaintext = shift(i, cyphertext);
+            if (potentialPlaintext.contains("the") || potentialPlaintext.contains("and") || potentialPlaintext.contains("you") || potentialPlaintext.contains("that") || potentialPlaintext.contains("have")){
+                return potentialPlaintext;
+            }
         }
-        return plaintext;
+        return "The plaintext could not be found";
     }
 
     public static String shift(int shift, String cyphertext){
