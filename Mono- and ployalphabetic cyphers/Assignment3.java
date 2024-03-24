@@ -21,6 +21,11 @@ public class Assignment3 {
     }
 
     public static String encrypt(int c11, int c12, int c21, int c22, String s){
+        // Check if determinant and 26 are coprime
+        if (gcd(c11*c22 - c12*c21,26) != 1){
+            System.out.println("The determinant and 26 are not coprime");
+            return "";
+        }
         String encryption = "";
         int i=0;
         if (s.length()%2 != 0){
@@ -45,5 +50,12 @@ public class Assignment3 {
         ciphertext.add((c11*plaintext.get(0) + c12*plaintext.get(1))%26);
         ciphertext.add((c21*plaintext.get(0) + c22*plaintext.get(1))%26);
         return ciphertext;
+    }
+
+    public static Integer gcd(int a, int b) {
+        if (b == 0) {
+            return a;
+        }
+        return gcd(b, a % b);
     }
 }
