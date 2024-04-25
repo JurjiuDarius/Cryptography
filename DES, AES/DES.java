@@ -23,7 +23,7 @@ class DES {
             26, 8, 16, 7, 27, 20, 13, 2, 41, 52, 31, 37, 47, 55, 30, 40, 51, 45, 33, 48, 44, 49, 39,
             56, 34, 53, 46, 42, 50, 36, 29, 32);
 
-    public static List<Integer> leftShifts = List.of(0, 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1);
+    public static List<Integer> leftShifts = List.of(1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1);
 
     public static List<Integer> E = List.of(32, 1, 2, 3, 4, 5, 4, 5, 6, 7, 8, 9, 8, 9, 10, 11, 12, 13, 12,
             13, 14, 15, 16, 17, 16, 17, 18, 19, 20, 21, 20, 21, 22, 23, 24, 25, 24, 25, 26, 27, 28,
@@ -86,11 +86,17 @@ class DES {
         
 
     public static void main(String[] args) {
+        //Sample plaintext 8f03456d3f78e2c5
+
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter plaintext: ");
-        String plaintext = scanner.nextLine();
+        // System.out.println("Enter plaintext: ");
+        String plaintext = "8f03456d3f78e2c5";
         
-        DESencrypt(plaintext, keyString, 16);
+        List<boolean[]> cypherText = DESencrypt(plaintext, keyString, 16);
+        System.out.println("The cyphertext is: ");
+        for (int i = 0; i < cypherText.size(); i++) {
+            System.out.print(bitsToHexString(cypherText.get(i)));
+        }
         System.out.println("Press any key to continue...");
         scanner.nextLine();
         scanner.close();
@@ -99,35 +105,53 @@ class DES {
      
     public static List<boolean[]> DESencrypt(String plaintext, String key, Integer rounds) {
         System.out.println("Encrypting plaintext: " + plaintext + " with key: " + key);
+
         List<boolean[]> partitionedPlaintext = partitionPlaintext(plaintext);
         List<boolean[]> partitionedCypherText = new ArrayList<>();
         for (int k = 0; k < partitionedPlaintext.size(); k++) {
+
             System.out.println("For partition " + k);
             boolean[] booleanPlaintext = partitionedPlaintext.get(k);
+            booleanPlaintext = applyPermutation(booleanPlaintext, initialPermutation);
+
             for (int i = 0; i < rounds; i++) {
-                System.out.println("\n\nRound " + i + ": ");
                 boolean[] keyBits = hexStringToBits(key);
                 boolean[] roundKey = getKeyForRound(keyBits, i);
 
 
                 boolean[] newPlaintext = encryptPlaintextWithKey(booleanPlaintext, roundKey, i);
-                System.out.println("\nFor round " + i + " the plaintext is: ");
-                for (int j = 0; j < newPlaintext.length; j++) {
-                    System.out.print(newPlaintext[j] ? "1" : "0");
-                }
-                System.out.println("\nThe round key was: ");
-                for (int j = 0; j < roundKey.length; j++) {
-                    System.out.print(roundKey[j] ? "1" : "0");
-                }
-                booleanPlaintext = newPlaintext;
+                if (i == 9) {
+                    System.out.println("\nFor round " + i + " the plaintext is: "
+                            + bitsToHexString(newPlaintext));
 
+                    System.out.println("\nThe round key was: " + bitsToHexString(roundKey));
+}
+                    booleanPlaintext = newPlaintext;
+                
             }
-            booleanPlaintext = applyPermutation(booleanPlaintext, inverseInitialPermutation);
+            boolean[] temp = new boolean[booleanPlaintext.length];
+            for (int i = 0; i < booleanPlaintext.length / 2; i++) {
+                temp[i] = booleanPlaintext[i + booleanPlaintext.length / 2];
+                temp[i + booleanPlaintext.length / 2] = booleanPlaintext[i];
+            }
+            booleanPlaintext = applyPermutation(temp, inverseInitialPermutation);
             partitionedCypherText.add(booleanPlaintext);
         }
         return partitionedCypherText;
     }
 
+    public static String bitsToHexString(boolean[] bits) {
+        StringBuilder hexStringBuilder = new StringBuilder();
+        for (int i = 0; i < bits.length; i += 4) {
+            boolean[] hexBits = new boolean[4];
+            for (int j = 0; j < 4; j++) {
+                hexBits[j] = bits[i + j];
+            }
+            int hexValue = convertToInteger(hexBits);
+            hexStringBuilder.append(Integer.toHexString(hexValue));
+        }
+        return hexStringBuilder.toString();
+    }
     public static List<boolean[]> partitionPlaintext(String plaintext) {
         // Partition the plaintext into 64-bit parts. If the last one is not exactly 64, pad it with zeros
         int partitionCount = (int) Math.ceil((double) plaintext.length() / 16);
@@ -148,6 +172,7 @@ class DES {
             leftSide[i] = plaintext[i];
             rightSide[i] = plaintext[i + plaintext.length / 2];
         }
+        
         boolean[] rightSideAfterFeistel = applyFeistel(rightSide, key, round);
         boolean[] newLeftSide = rightSide;
         boolean[] newRightSide = xor(leftSide, rightSideAfterFeistel);
@@ -160,10 +185,15 @@ class DES {
     }
 
     public static boolean[] applyFeistel(boolean[] plaintext, boolean[] key, Integer round) {
+        
         boolean[] expanded = applyPermutation(plaintext, E);
+        
         boolean[] xorResult = xor(expanded, key);
+        
+
         boolean[] sboxResult = applySbox(xorResult, round);
         boolean[] permuted = applyPermutation(sboxResult, P);
+
         return permuted;
     }
 
@@ -228,7 +258,10 @@ class DES {
             leftKey[i] = permutedKey[i];
             rightKey[i] = permutedKey[i + permutedKey.length / 2];
         }
-        Integer shifInteger = leftShifts.get(round);
+        Integer shifInteger = 0;
+        for (int i = 0; i < round+1; i++) {
+            shifInteger += leftShifts.get(i);
+        }
         leftKey = leftCircularShift(leftKey, shifInteger);
         rightKey = leftCircularShift(rightKey, shifInteger);
 
