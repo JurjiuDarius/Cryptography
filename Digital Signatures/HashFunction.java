@@ -35,15 +35,17 @@ public class HashFunction {
         System.out.println(hash.length);
         System.out.println("Press any key to continue...");
         Scanner sc = new Scanner(System.in);
+        createSteganographyImage("image.jpg", hash);
         sc.nextLine();
         sc.close();
     }
     
-    public static void createImage(String imagePath, byte[] hash) {
+    public static void createSteganographyImage(String imagePath, byte[] hash) {
         try {
             BufferedImage image = ImageIO.read(new File(imagePath));
             int width = image.getWidth();
             int height = image.getHeight();
+            int[] bits = bytesToInt(hash);
 
             int hashIndex = 0;
 
@@ -55,21 +57,46 @@ public class HashFunction {
                     int green = (pixel >> 8) & 0xFF;
                     int blue = pixel & 0xFF;
 
-                    red = (red & 0xFE) | ((hash[hashIndex] >> 7) & 0x1);
-                    green = (green & 0xFE) | ((hash[hashIndex] >> 6) & 0x1);
-                    blue = (blue & 0xFE) | ((hash[hashIndex] >> 5) & 0x1);
+                    // Set the LSB of each channel. If the array is at its end, break
+                    red = (red & 0xFE) | ((bits[hashIndex]) & 0x1);
+                    hashIndex += 1;
+                    if (hashIndex >= bits.length) {
+                        break;
+                    }
+                    green = (green & 0xFE) | (bits[hashIndex] & 0x1);
+                    hashIndex += 1;
+                    if (hashIndex >= bits.length) {
+                        break;
+                    }
+                    blue = (blue & 0xFE) | ((bits[hashIndex]) & 0x1);
+                    hashIndex += 1;
+                    if (hashIndex >= bits.length) {
+                        break;
+                    }
 
+                    // Combine channels into a new pixel
                     int newPixel = (red << 16) | (green << 8) | blue;
                     image.setRGB(x, y, newPixel);
 
-                    hashIndex = (hashIndex + 1) % hash.length;
+                    
                 }
             }
 
-            ImageIO.write(image, "png", new File("output.png"));
+            ImageIO.write(image, "jpg", new File("image_new.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static int[] bytesToInt(byte[] bytes) {
+        int[] result = new int[bytes.length * 8];
+        // Put each bit in a single integer
+        for (int i = 0; i < bytes.length; i++) {
+            for (int j = 0; j < 8; j++) {
+                result[i * 8 + j] = (bytes[i] >> j) & 0x1;
+            }
+        }
+        return result;
     }
 
     public static byte[] hash(byte[] message) {
@@ -121,19 +148,15 @@ public class HashFunction {
 
         final IntBuffer result = IntBuffer.allocate(blockCount * (BLOCK_BYTES / Integer.BYTES));
 
-        // copy as much of the message as possible
         ByteBuffer buf = ByteBuffer.wrap(message);
         for (int i = 0, n = message.length / Integer.BYTES; i < n; ++i) {
             result.put(buf.getInt());
         }
-        // copy the remaining bytes (less than 4) and append 1 bit (rest is zero)
         ByteBuffer remainder = ByteBuffer.allocate(4);
         remainder.put(buf).put((byte) 0b10000000).rewind();
         result.put(remainder.getInt());
 
-        // ignore however many pad bytes (implicitly calculated in the beginning)
         result.position(result.capacity() - 2);
-        // place original message length as 64-bit integer at the end
         long msgLength = message.length * 8L;
         result.put((int) (msgLength >>> 32));
         result.put((int) msgLength);
