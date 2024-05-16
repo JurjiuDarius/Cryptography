@@ -1,0 +1,2 @@
+javac HashFunction.java
+java HashFunction
