@@ -1,11 +1,18 @@
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class RSA_Hack {
     public static int[] cyphertext = {365, 0, 4845, 14930, 2608, 2608, 0};
-    public static int n = 18721;
-    public static int b = 25;
+    public static int n = 11413;
+    public static int b = 3533;
+    public static char[] englishAlphabet = "abcdefghijklmnopqrstuvwxyz".toCharArray();
+    public static Map<Integer, String> characterEncryptionMap;
 
     public static void main(String[] args) {
+        characterEncryptionMap = getCharMap(b, n);
+        System.out.println("Print the hasmap");
+       
         Scanner scanner = new Scanner(System.in);
         System.out.println("How long is the cyphertext?");
         int length = scanner.nextInt();
@@ -14,24 +21,38 @@ public class RSA_Hack {
             System.out.println("Enter the cyphertext");
             cyphertext[i] = scanner.nextInt();
         }
-        String plaintext = RSAHack(cyphertext, length);
-        System.out.println("The plaintext is " + plaintext);
+        System.out.println("The plaintext is");
+        for (int i = 0; i < length; i++) {
+            if (characterEncryptionMap.containsKey(cyphertext[i])) {
+                System.out.println("?");
+            }
+            System.err.print(characterEncryptionMap.get(cyphertext[i]));
+        }
+
+        // String plaintext = RSAHack(cyphertext, length);
+        // System.out.println("The plaintext is " + plaintext);
         System.out.println("Press enter to continue");
         scanner.nextLine();
         scanner.nextLine();
         scanner.close();
     }
-    
+
+   public static HashMap<Integer, String> getCharMap(int b, int n){
+        HashMap<Integer, String> map = new HashMap<>();
+        for (char c : englishAlphabet) {
+            int ascii = (int) c - 97;
+            int encrypted = rapidExpModN(ascii, b, n);
+            map.put(encrypted, String.valueOf(c));
+        }
+        
+        return map;
+    } 
     public static String RSAHack(int[] cyphertext, int length) {
-        int[] factors = factorN(n);
-        int q = factors[0];
-        int p = factors[1];
-        int phi = (q - 1) * (p - 1);
-        int a = inverseOfBModuloN(b, phi);
+    
         int[] plaintext = new int[length];
         for (int i = 0; i < length; i++) {
             int m = cyphertext[i];
-            plaintext[i] = rapidExpModN(m, a, n);
+            plaintext[i] = rapidExpModN(m, b, n);
         }
         String result = listToString(plaintext);
         return result;

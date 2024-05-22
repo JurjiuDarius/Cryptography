@@ -7,9 +7,13 @@ class ElGamal {
         int alhpa = 122503;
         int a = 10;
         int k = 45;
-        int message = (int) 'B';
-        int encryption = signElGamal(alhpa, a, p, k, message);
-        System.out.println("Encrypted message: " + encryption);
+        String m = "B";
+        int[] message = stringToIntArray(m);
+        int[] encryption = signElGamal(alhpa, a, p, k, message);
+        System.out.println("Encrypted message: ");
+        for (int i = 0; i < encryption.length;i++){
+            System.out.println( encryption[i]);
+        }
         int beta = verifyBeta(alhpa, a, p);
         System.out.println("Beta: " + beta);
         Scanner sc = new Scanner(System.in);
@@ -19,14 +23,25 @@ class ElGamal {
 
     }
     
-
-    public static int signElGamal(int alpha, int a, int p, int k, int m) {
-        int gamma = rapidExp(alpha, k, p);
-        int encryption = (m - a * gamma) * modInverse(k, p - 1) % (p - 1);
-        while (encryption < 0) {
-            encryption += (p - 1);
+    public static int[] stringToIntArray(String s) {
+        int [] encryption = new int[s.length()];
+        for (int i = 0; i < s.length(); i++) {
+            encryption[i] = s.charAt(i);
         }
         return encryption;
+    }
+    public static int[] signElGamal(int alpha, int a, int p, int k, int[] message) {
+        int gamma = rapidExp(a, k, p);
+        int [] encryptionArray = new int[message.length];
+        for (int i = 0; i < message.length; i++) {
+            int encryption = ((message[i] - a * gamma) * modInverse(k, p - 1)) % (p - 1);
+            while (encryption < 0) {
+                encryption += (p - 1);
+            }
+            encryptionArray[i] = encryption;
+        }
+        //System.out.println(gamma);
+        return encryptionArray;
     }
 
     public static int modInverse(int a, int m) {
